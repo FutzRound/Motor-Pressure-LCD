@@ -7,6 +7,6 @@ create a automated air pump that pumps air into an object. It continuously monit
 
 It measures/displays pressure in units of pascals & millibars.
 
-Currently working to program pushbuttons and have the pressure sensor control motor start/end & speed.
+**Push button's have been programmed, everything appears to be working fine**
 
 This is one of my first codes so please excuse any newb issues/faults.
