@@ -1,8 +1,8 @@
-//Sample using LiquidCrystal library
+// Sample using LiquidCrystal library
 
 #include <LiquidCrystal.h>
 
-// Declare L298N Dual H-Bridge Motor Controller directly since there is not a library to load.
+// Declare L298N Dual H-Bridge Motor Controller directly since there is not a library to load
 
 // Motor 1
 
@@ -10,20 +10,47 @@ int dir1PinA = 2;
 int dir2PinA = 3;
 int speedPinA = 9; // Needs to be a PWM pin to be able to control motor speed
 
+
+// Constants
+
+const int buttonFwr = 13;
+const int buttonOff = 10;
+const int buttonRvr = 6;
+
+// Variables
+
+int buttonFwrState = 0;
+int buttonOffState = 0;
+int buttonRvrState = 0;
+
 // Initialize the library with the numbers of the interface pins
 
-LiquidCrystal lcd(12, 11, 5, 4, 7, 8);
+LiquidCrystal lcd (12, 11, 5, 4, 7, 8);
+
+// Stores time for milli() function **replaces delay(), critical software function**
+
+unsigned long interval = 400; // The time we need to wait
+unsigned long previousMillis = 0; //  Millis() returns an unsigned long
 
 // Pressure Sensor Definition
 
-float readPressure(int pin) {
+float readPressure(int pin)
+
+{
         int pressureValue = analogRead(A1);
         float pressure = ((pressureValue / 1024.0) + 0.095) / 0.000009;
         return pressure;
 }
 
-void setup() {  // Setup runs once per reset
 
+// boolean claims (True or False)
+
+bool forwardstate = false;
+bool reversestate = false;
+
+void setup()
+
+{
         // Set up the LCD's number of columns and rows
 
         lcd.begin(16, 2);
@@ -39,38 +66,63 @@ void setup() {  // Setup runs once per reset
         pinMode(dir2PinA, OUTPUT);
         pinMode(speedPinA, OUTPUT);
 
-        // Possible to input pinMode for (A1) -- Pressure Sensor to use are variable to control ((dir1PinA/dir2PinA) Motor Output) ?
+        // Define Pushbutton Pins
 
+        pinMode(buttonFwr, INPUT);
+        pinMode(buttonOff, INPUT);
+        pinMode(buttonRvr, INPUT);
 }
 
-void loop() {
+void loop()
+
+{
+
+        // Digital States of Pushbuttons
+
+        buttonFwrState = digitalRead(buttonFwr);
+        buttonOffState = digitalRead(buttonOff);
+        buttonRvrState = digitalRead(buttonRvr);
 
         // Pressure Sensor
 
         float pressure = readPressure(A1);
         float millibars = pressure / 100;
+        float kilopascal = pressure / 1000;
 
-        // Initialize the Serial interface:
+        // Constant LCD Display of Pressure Value (Regardless of Functions)
 
-        if (Serial.available() > 0) {
+        unsigned long currentMillis = millis();
+        if ((unsigned long)(currentMillis - previousMillis) >= interval) // ((time since last screen refresh - 0) >= 400) measured in milliseconds
 
+        {
+                lcd.setCursor(0,0); // Writes text for top row
+                lcd.print("P= "); // Prints Pressure Sensor Val to LCD
+                lcd.print(kilopascal);
+                lcd.print( " kPa "); // Displays Pressure Value in Pascals (Pa)
+                previousMillis = millis();
+        }
 
-                int inByte = Serial.read();
-                int speed(); // Local variable
+        // Inflate Button Functions
 
-                switch (inByte) {
+        if (((forwardstate == false) && (buttonFwrState == HIGH)) || (forwardstate == true))
 
-                // Define actions with Motor Control / Serial Print / LCD Print
+        {
+                Serial.println("hello world."); // Debugging Easter Egg
+                forwardstate = true;
 
-                case '1':
+                // Runs motor until pressure reaches max pressure
 
-                        // Motor 1 Forward
+                if (pressure < 89999.00)         // Setting PressMAX to 100kPa
 
-                        analogWrite(speedPinA, 255);// Sets speed variable via PWM
+                {
+                        analogWrite(speedPinA, 255);           // Sets speed variable via PWM
                         digitalWrite(dir1PinA, LOW);
                         digitalWrite(dir2PinA, HIGH);
-                        Serial.println("Motor 1 Forward"); // Prints out “Motor 1 Forward” on the serial monitor
-                        Serial.println("   "); // Creates a blank line printed on the serial monitor
+
+                        // Serial Display
+
+                        Serial.println("Motor 1 Forward");         // Prints out “Motor 1 Forward” on the serial monitor
+                        Serial.println("   ");         // Creates a blank line printed on the serial monitor
                         Serial.println();
                         Serial.print("Pressure = ");
                         Serial.print(pressure);
@@ -80,52 +132,101 @@ void loop() {
                         Serial.println(" millibars ");
                         Serial.println();
 
-                        // LCD Display Input Settings
+                        //LCD Display Input Settings
 
-                        lcd.clear();
-                        lcd.setCursor(0,0); // Writes text for top row
-                        lcd.print("Pressure = "); // Prints Pressure Sensor Val to LCD
-                        lcd.print(pressure);
-                        lcd.print(millibars);
-                        lcd.setCursor(0,1); // Writes text for bottom row
-                        lcd.print("Motor 1 Forward");
-                        break;
+                        lcd.setCursor(0,1);         // Writes text for bottom row
+                        lcd.print("Motor 1 Forward    ");
+                }
 
-                case '2':
+                if (pressure > 90000.00 && pressure <100000.00)
 
-                        // Motor 1 Stop (Freespin)
-
-                        analogWrite(speedPinA, 0);
+                {
+                        analogWrite(speedPinA, 100); // Sets speed variable via PWM
                         digitalWrite(dir1PinA, LOW);
                         digitalWrite(dir2PinA, HIGH);
-                        Serial.println("Motor 1 Stop");
-                        Serial.println("   ");
+                }
+                // Stops motor once pressure reaches max value
+
+                else if (pressure >= 100001.00)
+
+                {
+                        analogWrite(speedPinA, 0);         // Sets speed variable via PWM
+                        digitalWrite(dir1PinA, LOW);
+                        digitalWrite(dir2PinA, LOW);
+                        Serial.println("Motor 1 Forward");         // Prints out “Motor 1 Forward” on the serial monitor
                         Serial.println();
                         Serial.print("Pressure = ");
                         Serial.print(pressure);
                         Serial.println(" pascals ");
-                        Serial.print("Pressure = ");
-                        Serial.print(millibars);
-                        Serial.println(" millibars ");
                         Serial.println();
+                        Serial.println("****Pressure Successfully Reached****");
+                        Serial.println();
+
 
                         // LCD Display Input Settings
 
-                        lcd.clear();
-                        lcd.setCursor(0,0); // Writes text for top row
-                        lcd.print("Pressure = "); // Prints Pressure Sensor Val to LCD
-                        lcd.print(pressure);
-                        lcd.setCursor(0,1); // Writes text for bottom row
-                        lcd.print("Motor 1 Stop");
-                        break;
+                        lcd.setCursor(0,1);         // Writes text for bottom row
+                        lcd.print("PRESSURE REACHED    ");
+                }
+        }
 
-                case '3':
+        if ((forwardstate == false) && ((buttonOffState == HIGH) || (forwardstate == HIGH)))
 
-                        // Motor 1 Reverse
+        {
+                forwardstate = false;
+                analogWrite(speedPinA, 0);
+                digitalWrite(dir1PinA, LOW);
+                digitalWrite(dir2PinA, HIGH);
+        }
 
+// Off Button Functions
+
+        if (buttonOffState == HIGH)
+
+        {
+                // Motor 1 Stop (Freespin)
+
+                analogWrite(speedPinA, 0);
+                digitalWrite(dir1PinA, LOW);
+                digitalWrite(dir2PinA, HIGH);
+
+                // Serial Display
+
+                Serial.println("Motor 1 Stop");
+                Serial.println("   ");
+                Serial.println();
+                Serial.print("Pressure = ");
+                Serial.print(pressure);
+                Serial.println(" pascals ");
+                Serial.print("Pressure = ");
+                Serial.print(millibars);
+                Serial.println(" millibars ");
+                Serial.println();
+
+                // LCD Display Input Settings
+
+                lcd.setCursor(0,1);         // Writes text for bottom row
+                lcd.print("Motor 1 Stop     ");
+        }
+
+// Deflate Button Functions
+
+        if (((reversestate == false) && (buttonRvrState == HIGH)) || (reversestate == true)) ;
+
+        {
+                reversestate = true;
+
+                // Motor 1 Reverse
+
+                if (pressure >= 100000.00)
+
+                {
                         analogWrite(speedPinA, 255);
                         digitalWrite(dir1PinA, HIGH);
                         digitalWrite(dir2PinA, LOW);
+
+                        // Serial Display
+
                         Serial.println("Motor 1 Reverse");
                         Serial.println("   ");
                         Serial.println();
@@ -139,21 +240,29 @@ void loop() {
 
                         // LCD Display Input Settings
 
-                        lcd.clear();
-                        lcd.setCursor(0,0); // Writes text for top row
-                        lcd.print("Pressure = "); // Prints Pressure Sensor Val to LCD
-                        lcd.print(pressure);
                         lcd.setCursor(0,1); // Writes text for bottom row
-                        lcd.print("Motor 1 Reverse");
-                        break;
-
-                default:
-
-                        // Turn all the connections off if an unmapped key is pressed:
-
-                        for (int thisPin = 2; thisPin < 11; thisPin++) {
-                                digitalWrite(thisPin, LOW);
-                        }
+                        lcd.print("Motor 1 Reverse    ");
                 }
+
+                else if (pressure < 0.00)
+
+                {
+                        analogWrite(speedPinA, 0);
+                        digitalWrite(dir1PinA, LOW);
+                        digitalWrite(dir2PinA, LOW);
+
+                        // LCD Display
+
+                        lcd.setCursor(0,1); //Writes text for bottom row
+                        lcd.print(" ***DEFLATED*** ");
+                }
+        }
+        if ((reversestate == false) && ((buttonRvrState == HIGH) || (buttonOffState == HIGH)))
+
+        {
+                forwardstate = false;
+                analogWrite(speedPinA, 0);
+                digitalWrite(dir1PinA, LOW);
+                digitalWrite(dir2PinA, HIGH);
         }
 }
