@@ -77,6 +77,9 @@ void loop()
 
 {
 
+        //Debugging
+        Serial.println(reversestate);
+
         // Digital States of Pushbuttons
 
         buttonFwrState = digitalRead(buttonFwr);
@@ -138,18 +141,20 @@ void loop()
                         lcd.print("Motor 1 Forward    ");
                 }
 
-                if (pressure > 90000.00 && pressure <100000.00)
+                if (pressure > 90000.00 && pressure < 100000.00)
 
                 {
                         analogWrite(speedPinA, 100); // Sets speed variable via PWM
                         digitalWrite(dir1PinA, LOW);
                         digitalWrite(dir2PinA, HIGH);
+                        lcd.print("Half Speed ****");
                 }
                 // Stops motor once pressure reaches max value
 
-                else if (pressure >= 100001.00)
+                else if (pressure > 100001.00)
 
                 {
+
                         analogWrite(speedPinA, 0);         // Sets speed variable via PWM
                         digitalWrite(dir1PinA, LOW);
                         digitalWrite(dir2PinA, LOW);
@@ -161,6 +166,7 @@ void loop()
                         Serial.println();
                         Serial.println("****Pressure Successfully Reached****");
                         Serial.println();
+                        Serial.println(reversestate); // reversestate debugging
 
 
                         // LCD Display Input Settings
@@ -170,13 +176,17 @@ void loop()
                 }
         }
 
-        if ((forwardstate == false) && ((buttonOffState == HIGH) || (forwardstate == HIGH)))
+        if ((forwardstate == true) && ((buttonOffState == HIGH) || (forwardstate == false)))
 
         {
                 forwardstate = false;
                 analogWrite(speedPinA, 0);
                 digitalWrite(dir1PinA, LOW);
-                digitalWrite(dir2PinA, HIGH);
+                digitalWrite(dir2PinA, LOW);
+
+                // Debugging
+                Serial.println(forwardstate);
+                Serial.println(reversestate);
         }
 
 // Off Button Functions
@@ -211,14 +221,14 @@ void loop()
 
 // Deflate Button Functions
 
-        if (((reversestate == false) && (buttonRvrState == HIGH)) || (reversestate == true)) ;
+        if (((reversestate == false) && (buttonRvrState == HIGH)) || (reversestate == true))
 
         {
                 reversestate = true;
 
                 // Motor 1 Reverse
 
-                if (pressure >= 100000.00)
+                if (pressure > 100000.00)
 
                 {
                         analogWrite(speedPinA, 255);
@@ -244,9 +254,10 @@ void loop()
                         lcd.print("Motor 1 Reverse    ");
                 }
 
-                else if (pressure < 0.00)
+                else if (pressure <= 20000.00)
 
                 {
+                        Serial.println("wutdoing y'all?");
                         analogWrite(speedPinA, 0);
                         digitalWrite(dir1PinA, LOW);
                         digitalWrite(dir2PinA, LOW);
@@ -257,12 +268,12 @@ void loop()
                         lcd.print(" ***DEFLATED*** ");
                 }
         }
-        if ((reversestate == false) && ((buttonRvrState == HIGH) || (buttonOffState == HIGH)))
+        if ((reversestate == true) && ((buttonOffState == HIGH) || (reversestate == false)))
 
         {
-                forwardstate = false;
+                reversestate = false;
                 analogWrite(speedPinA, 0);
                 digitalWrite(dir1PinA, LOW);
-                digitalWrite(dir2PinA, HIGH);
+                digitalWrite(dir2PinA, LOW);
         }
 }
