@@ -147,6 +147,7 @@ void loop()
                         analogWrite(speedPinA, 100); // Sets speed variable via PWM
                         digitalWrite(dir1PinA, LOW);
                         digitalWrite(dir2PinA, HIGH);
+                        lcd.setCursor(0,1);
                         lcd.print("Half Speed ****");
                 }
                 // Stops motor once pressure reaches max value
